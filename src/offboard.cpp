@@ -3,10 +3,11 @@
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
-
+#include <iostream>
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
+    ROS_INFO("Connected %d", current_state.connected);
 }
 
 int main(int argc, char **argv)
@@ -15,17 +16,18 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
-            ("mavros/state", 10, state_cb);
+            ("/uav0/mavros/state", 10, state_cb);
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>
-            ("mavros/setpoint_position/local", 10);
+            ("/uav0/mavros/setpoint_position/local", 10);
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>
-            ("mavros/cmd/arming");
+            ("/uav0/mavros/cmd/arming");
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>
-            ("mavros/set_mode");
+            ("/uav0/mavros/set_mode");
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
 
+    ROS_INFO("Checking for connection");
     // wait for FCU connection
     while(ros::ok() && !current_state.connected){
         ros::spinOnce();
@@ -36,7 +38,7 @@ int main(int argc, char **argv)
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
     pose.pose.position.z = 2;
-
+    ROS_INFO("Connection Established");
     //send a few setpoints before starting
     for(int i = 100; ros::ok() && i > 0; --i){
         local_pos_pub.publish(pose);
@@ -44,6 +46,7 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
+    ROS_INFO("Setting mode to offboard");
     mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "OFFBOARD";
 
