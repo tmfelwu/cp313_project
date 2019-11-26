@@ -53,6 +53,7 @@ time_now = time.time()
 time_prev = time.time()
 
 new_pos = Point()
+gps_pos = Point()
 
 ''' Imu data callback'''
 def imu_data_cb(data):
@@ -78,7 +79,7 @@ def imu_data_cb(data):
 def gps_data_cb(data):
     # print('####    GPS   ####')
     # print(data)
-    global x_gps, y_gps, z_gps, count, x_ori, y_ori, z_ori
+    global x_gps, y_gps, z_gps, count, x_ori, y_ori, z_ori ,gps_pos
 
     lat = data.latitude
     lon = data.longitude
@@ -94,6 +95,10 @@ def gps_data_cb(data):
         x_gps = R * np.cos(lat) * np.cos(lon) - x_ori
         y_gps = R * np.cos(lat) * np.sin(lon) - y_ori
         z_gps = R *np.sin(lat) - z_ori
+
+        gps_pos.x = x_gps
+        gps_pos.y= y_gps
+
     # print(z_gps)
     # print('-----------------------\n')
     # return x_gps, y_gps #,z_gps
@@ -240,9 +245,13 @@ rospy.Subscriber('/uav0/mavros/imu/mag', MagneticField, mag_data_cb)
 ''' Publishers '''
 #ground_truth_pub = rospy.Publisher('/ground_truth_yaw', Point, queue_size=1)
 estimated_pos_pub = rospy.Publisher('/est_pos', Point, queue_size=3)
+gps_pos_pub = rospy.Publisher('/gps_pos', Point, queue_size=3)
 
 while not rospy.is_shutdown():
    estimated_pos_pub.publish(new_pos)
+   gps_pos_pub.publish(gps_pos)
+
+
    print("x = {:.2f}, y = {:.2f}, z = {:.2f}\n".format(new_pos.x, new_pos.y, new_pos.z))
 
    rate.sleep()
