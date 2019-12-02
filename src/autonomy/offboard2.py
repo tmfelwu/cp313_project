@@ -139,7 +139,7 @@ def set_periodic_motion():
     pose.pose.position.y = radius * math.cos(uav1.theta)
     pose.pose.position.z = height
     local_pos_pub.publish(pose)
-    uav1.theta = uav1.theta + 0.01
+    uav1.theta = uav1.theta + 0.05
     if uav1.theta > 2 * math.pi:
         uav1.theta = 0
 

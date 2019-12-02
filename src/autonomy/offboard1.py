@@ -21,6 +21,7 @@ class UAV():
     last_req = rospy.Time.now()
     state = State()
     position = np.array([0,0,0])
+    r_p = np.array([])
 
 uav0 = UAV()
 
@@ -28,18 +29,18 @@ def state_cb(msg):
     uav0.state = msg
     global current_state
     current_state = msg
-    print(msg)
+    #print(msg)
 
 def pos_sub(msg):
-
     position = np.array([
         msg.pose.pose.position.x,
         msg.pose.pose.position.y,
         msg.pose.pose.position.z        
     ])
     uav0.position = position
-    if uav0.fsmState == FSMSTATES.TAKEOFF and np.linalg.norm( position - np.array([0,0,8]) ) < 0.1 :
+    if uav0.fsmState == FSMSTATES.TAKEOFF and np.linalg.norm( position - np.array([0,0,8]) ) < 1 :
         uav0.fsmState = FSMSTATES.PREDICT
+        uav0.predict_start = rospy.Time.now()
         print("Changing mode to PREDICT, Starting taking images")
 
 
@@ -68,6 +69,28 @@ local_pos_sub = rospy.Subscriber("/uav0/mavros/local_position/odom", Odometry, p
 local_pos_pub = rospy.Publisher("/uav0/mavros/setpoint_position/local", PoseStamped, queue_size= 10)
 arming_client = rospy.ServiceProxy('/uav0/mavros/cmd/arming', CommandBool)
 set_mode_client = rospy.ServiceProxy('/uav0/mavros/set_mode', SetMode)
+
+def r_s(msg):
+    position = np.array([
+        msg.pose.pose.position.x,
+        msg.pose.pose.position.y,
+        msg.pose.pose.position.z        
+    ])
+    if uav0.fsmState == FSMSTATES.PREDICT:
+        if ( rospy.Time.now() - uav0.predict_start < rospy.Duration(15) ):
+            uav0.r_p = np.append(uav0.r_p, [ position, rospy.Time.now()])
+            print("Observing the rogue drone.")
+        elif ( uav0.r_p.size > 0 ):
+            uav0.fsmState = FSMSTATES.INTERCEPT
+            print("Changing mode to INTERCEPT")
+            ## See where is shoudl be in 5 seconds.
+
+
+# rd
+rog_sub = rospy.Subscriber("/uav1/mavros/local_position/odom", Odometry, r_s)
+
+
+
 rogue_sub = rospy.Subscriber("/rogue", Point, rogue_cb)
 pose = PoseStamped()
 pose.pose.position.x = 0
@@ -112,9 +135,12 @@ while(not rospy.is_shutdown()):
 
     if ( uav0.fsmState == FSMSTATES.PREDICT):
         local_pos_pub.publish(pose)
-        pass
     
     if ( uav0.fsmState == FSMSTATES.INTERCEPT):
-        pass
-    
+        # Figure out the position of the rogue drone in 2 seconds
+        pose1 = PoseStamped()
+        pose1.pose.position.x = 1.9
+        pose1.pose.position.y = 1.9
+        pose1.pose.position.z = 1.5
+        local_pos_pub.publish(pose1)
     rate.sleep()

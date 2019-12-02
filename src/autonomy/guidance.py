@@ -52,7 +52,7 @@ def obs_cb(data):
     #print('------------------------\n')
     global z_obs , obs_data
     z_obs = data.data
-    #obs_data.append('x_obs','y_obs','z_obs')
+    obs_data.append(['x_obs','y_obs','z_obs')
 
 def gps_rog_cb(data):
     # print('####    GPS   ####')
@@ -89,7 +89,7 @@ def pos_cb():
     x_rog = rog_data[-1][0]
     y_rog = rog_data[-1][0]
     alpha_obs = m.atan((y_obs - obs_data[-2][1])/(x_obs - obs_data[-2][0]))
-    alpha_rog = m.atan((y_rog - rog_data[-2][1])/(x_rog - rog_data[-2][1]))
+    alpha_rog = m.atan((y_rog - rog_data[-2][1])/(x_rog - rog_data[-2][0]))
     los_range = np.sqrt((x_obs - x_rog)**2 + (y_obs - y_rog)**2 + (z_obs - z_rog)**2)  
     los_rate = m.atan((y_obs - y_rog)/(x_obs - x_rog) ) 
 
@@ -122,13 +122,9 @@ while not rospy.is_shutdown():
     pose.pose.position.y = y_obs
    
     if z_obs>z_rog:
-    #
-
         pose.pose.position.z = 2.0
     #pose.pose.position.x = 5.0
-
-
-  # print("x = {:.2f}, y = {:.2f}, z = {:.2f}\n".format(z_rog))
+    #print("x = {:.2f}, y = {:.2f}, z = {:.2f}\n".format(z_rog))
     obs_pos_pub.publish(pose)
 
     rate.sleep()
