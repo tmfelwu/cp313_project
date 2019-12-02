@@ -47,7 +47,7 @@ w_old = 0
 
 x_old = 0
 y_old = 0
-z_old = 0
+z_old = 1
 
 time_now = time.time()
 time_prev = time.time()
@@ -94,7 +94,7 @@ def gps_data_cb(data):
     else:
         x_gps = R * np.cos(lat) * np.cos(lon) - x_ori
         y_gps = R * np.cos(lat) * np.sin(lon) - y_ori
-        z_gps = R *np.sin(lat) - z_ori
+        #z_gps = R *np.sin(lat) - z_ori
 
         gps_pos.x = x_gps
         gps_pos.y= y_gps
@@ -240,7 +240,7 @@ def update():
 rospy.Subscriber('/uav0/mavros/imu/data', Imu, imu_data_cb)
 rospy.Subscriber('/uav0/mavros/global_position/raw/fix', NavSatFix, gps_data_cb)
 rospy.Subscriber('/uav0/mavros/imu/mag', MagneticField, mag_data_cb)
-# rospy.Subscriber('/uav1/mavros/global_position/rel_alt', Float64, alt_cb)
+rospy.Subscriber('/uav0/mavros/global_position/rel_alt', Float64, alt_cb)
 
 ''' Publishers '''
 #ground_truth_pub = rospy.Publisher('/ground_truth_yaw', Point, queue_size=1)
